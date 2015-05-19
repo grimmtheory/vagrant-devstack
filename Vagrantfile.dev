@@ -77,10 +77,10 @@ APIC_IO = "false" # Network IO acceleration, inconsistent performance when testi
 Vagrant.configure("2") do |config|
 
   # Select distribution and build for the box
-  if "#{VB_IMAGE_SOURCE}" == "URL"
-    config.vm.url = "#{VB_IMAGE_URL}"
-  else
-    config.vm.box = "#{VB_IMAGE_NAME}"
+  if "#{VB_IMAGE_SOURCE}" == "HASHI"
+    config.vm.url = "#{VB_IMAGE_NAME}"
+  elsif	"#{VB_IMAGE_SOURCE}" == "URL"
+    config.vm.box = "#{VB_IMAGE_URL}"
   end
 
   if "#{PROXY}" == "true"
