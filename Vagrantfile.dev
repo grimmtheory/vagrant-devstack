@@ -20,7 +20,7 @@ HTTPS_PROXY_HOST = "http://192.168.34.1" # Proxy host if enabled
 HTTP_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
 
 # Host OS image config
-VB_IMAGE_SOURCE = "" # Set to either "" to use the default Hashicorp syntax, "ubuntu/trusty64", or "URL" to use url syntax, http://cloud-images.ubuntu.com/vagrant/trusty...
+VB_IMAGE_SOURCE = "HASHI" # Set to either "HASHI" to use the default Hashicorp syntax, "ubuntu/trusty64", or "URL" to use url syntax, http://cloud-images.ubuntu.com/vagrant/trusty...
 VB_IMAGE_NAME = "ubuntu/trusty64" # The latest VirtualBox image of Trusty server 64 bit from Ubuntu
 VB_IMAGE_URL = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box" # Populate if you are pulling your own image
 
