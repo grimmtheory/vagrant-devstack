@@ -18,12 +18,15 @@ STACK_LOG="#{LOG_DIR}/stack.sh.log" # Stack.sh log file
 OS_HOSTNAME = "DEVSTACK-#{BUILD_VERSION}-#{BUILD_TYPE}" # Hostname for the OS, defaults to devstack + build version + build type
 NIC3_PROMISCUOUS = "true" # Leave true for Neutron flat / bridged configurations
 
-# Proxy config
-PROXY = "false" # Proxy server on or off
+# HTTP Proxy config
+HTTP_PROXY_ENABLE = "true" # HTTP proxy server on (true) or off (false)
 HTTP_PROXY_HOST = "http://192.168.34.1" # Proxy host if enabled
-HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
-HTTPS_PROXY_HOST = "http://192.168.34.1" # Proxy host if enabled
 HTTP_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
+
+# HTTPS Proxy config
+HTTPS_PROXY_ENABLE = "true" # HTTPS proxy server on (true) or off (false)
+HTTPS_PROXY_HOST = "http://192.168.34.1" # Proxy host if enabled
+HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
 
 # Host OS image config
 VB_IMAGE_SOURCE = "HASHI" # Set to either "HASHI" to use the default Hashicorp syntax, "ubuntu/trusty64", or "URL" to use url syntax, http://cloud-images.ubuntu.com/vagrant/trusty...
@@ -89,10 +92,16 @@ Vagrant.configure("2") do |config|
     config.vm.url = "#{VB_IMAGE_URL}"
   end
 
-  if "#{PROXY}" == "true"
+  if "#{HTTP_PROXY_ENABLE}" == "true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
       config.proxy.http     = "#{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/"
-      config.proxy.https    = "#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
+      config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+    end
+  end
+
+  if "#{HTTPS_PROXY_ENABLE}" == "true"
+    if Vagrant.has_plugin?("vagrant-proxyconf")
+      config.proxy.http     = "#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
       config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
     end
   end
@@ -136,10 +145,17 @@ Vagrant.configure("2") do |config|
 
     # Begin in-line script
     config.vm.provision "shell", inline: <<-EOF
-    
+# Install root certificate for proxying
+mkdir /usr/share/ca-certificates/extra
+cp /Vagrant/charles.crt mkdir /usr/share/ca-certificates/extra
+dpkg-reconfigure ca-certificates
+
 # Install some dependencies and tools
 apt-get update
 apt-get -y install git nmap traceroute
+
+# Set git to use https:// instead of git://
+git config --global url.https://.insteadOf git://
 
 # Clone the devstack repo
 git clone https://github.com/openstack-dev/devstack.git "#{STACK_HOME}/devstack"
@@ -282,11 +298,11 @@ echo "" ; echo "Updating permissions on "#{STACK_HOME}"..."
 chown -R vagrant:vagrant "#{STACK_HOME}"
 
 # Add credentials to Vagrant's bash profile
-echo "" ; echo "Adding openrc credentials to '#{STACK_HOME}/.bash_profile'"
-echo "source '#{STACK_HOME}/devstack/openrc admin demo' >> '#{STACK_HOME}/.bash_profile'"
+echo "" ; echo "Adding openrc credentials to #{STACK_HOME}/.bash_profile"
+echo "source #{STACK_HOME}/devstack/openrc admin demo' >> #{STACK_HOME}/.bash_profile"
 
 # fix routing so that VMs can reach out to the internets
-echo "" ; echo "Fixing routing so that "#{PRIVATE_NETWORK}.0/24" can see "#{PUBLIC_NETWORK}.0/24"
+echo "" ; echo "Fixing routing so that #{PRIVATE_NETWORK}.0/24 can see #{PUBLIC_NETWORK}.0/24"
 cat << SYSCTL > "/etc/sysctl.d/60-devstack.conf"
 net.ipv4.conf.eth0.proxy_arp = 1
 net.ipv4.ip_forward = 1
@@ -304,7 +320,7 @@ echo "" ; ifconfig eth2
 
 # setup devstack
 echo "" ; "Setting up DevStack..."
-cd "#{STACK_HOME}/devstack"
+cd #{STACK_HOME}/devstack
 sudo -u vagrant env HOME=#{STACK_HOME} ./stack.sh
 
 # fix network setup to make VMs pingable from inside and outside devstack
@@ -312,18 +328,18 @@ echo "" ; echo "Fix network setup to make VMs pingable from inside and outside d
 ovs-vsctl add-port br-ex eth2
 
 # Setup the eth2 interfaces file
-cat << ETH2 > "/etc/network/interfaces.d/eth2.cfg"
+cat << ETH2 > /etc/network/interfaces.d/eth2.cfg
 auto eth2
 iface eth2 inet manual
 ETH2
 
 # Setup the br-ex interfaces file
-cat << BREX > "/etc/network/interfaces.d/br-ex.cfg"
+cat << BREX > /etc/network/interfaces.d/br-ex.cfg
 auto br-ex
 iface br-ex inet static
-address "#{PUBLIC_NETWORK}.2"
-netmask "#{DEFAULT_MASK}"
-up ip route add "#{PRIVATE_NETWORK}.0/24" via "#{PUBLIC_NETWORK}.3" dev br-ex
+address #{PUBLIC_NETWORK}.2
+netmask #{DEFAULT_MASK}
+up ip route add #{PRIVATE_NETWORK}.0/24 via #{PUBLIC_NETWORK}.3 dev br-ex
 BREX
 
 # Begin post tasks
