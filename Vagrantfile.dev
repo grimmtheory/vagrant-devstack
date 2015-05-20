@@ -18,16 +18,6 @@ STACK_LOG="#{LOG_DIR}/stack.sh.log" # Stack.sh log file
 OS_HOSTNAME = "DEVSTACK-#{BUILD_VERSION}-#{BUILD_TYPE}" # Hostname for the OS, defaults to devstack + build version + build type
 NIC3_PROMISCUOUS = "true" # Leave true for Neutron flat / bridged configurations
 
-# HTTP Proxy config
-HTTP_PROXY_ENABLE = "true" # HTTP proxy server on (true) or off (false)
-HTTP_PROXY_HOST = "http://192.168.34.1" # Proxy host if enabled
-HTTP_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
-
-# HTTPS Proxy config
-HTTPS_PROXY_ENABLE = "true" # HTTPS proxy server on (true) or off (false)
-HTTPS_PROXY_HOST = "http://192.168.34.1" # Proxy host if enabled
-HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
-
 # Host OS image config
 VB_IMAGE_SOURCE = "HASHI" # Set to either "HASHI" to use the default Hashicorp syntax, "ubuntu/trusty64", or "URL" to use url syntax, http://cloud-images.ubuntu.com/vagrant/trusty...
 VB_IMAGE_NAME = "ubuntu/trusty64" # The latest VirtualBox image of Trusty server 64 bit from Ubuntu
@@ -39,6 +29,16 @@ PUBLIC_NETWORK = "192.168.28" # Neutron gateway / provider network
 PRIVATE_NETWORK = "10.0.0" # Private network CIDR
 DEFAULT_MASK = "255.255.255.0" # Defualt /24 network mask unless specified otherwise
 DNS = "10.0.2.3" # Default DNS server for your subnets, e.g. local VirtualBox forwarder
+
+# HTTP Proxy config
+HTTP_PROXY_ENABLE = "false" # HTTP proxy server on (true) or off (false)
+HTTP_PROXY_HOST = "#{MANAGEMENT_NETWORK}.1" # Proxy host if enabled
+HTTP_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
+
+# HTTPS Proxy config
+HTTPS_PROXY_ENABLE = "false" # HTTPS proxy server on (true) or off (false)
+HTTPS_PROXY_HOST = "#{MANAGEMENT_NETWORK}.1" # Proxy host if enabled
+HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
 
 # Set DevStack base config
 HOST_IP = "#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
@@ -94,14 +94,14 @@ Vagrant.configure("2") do |config|
 
   if "#{HTTP_PROXY_ENABLE}" == "true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
-      config.proxy.http     = "#{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/"
+      config.proxy.http     = "#{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}"
       config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
     end
   end
 
   if "#{HTTPS_PROXY_ENABLE}" == "true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
-      config.proxy.http     = "#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
+      config.proxy.https     = "#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
       config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
     end
   end
@@ -145,10 +145,28 @@ Vagrant.configure("2") do |config|
 
     # Begin in-line script
     config.vm.provision "shell", inline: <<-EOF
-# Install root certificate for proxying
-mkdir /usr/share/ca-certificates/extra
-cp /Vagrant/charles.crt mkdir /usr/share/ca-certificates/extra
-dpkg-reconfigure ca-certificates
+# # Install root certificate for proxying
+# cat << CERT > /usr/share/ca-certificates/charles.crt
+# -----BEGIN CERTIFICATE-----
+# MIICnjCCAgegAwIBAgIJANebwMY/UnDeMA0GCSqGSIb3DQEBBQUAMD8xCzAJBgNV
+# BAYTAlVTMRAwDgYDVQQIEwdHZW9yZ2lhMRAwDgYDVQQHEwdBdGxhbnRhMQwwCgYD
+# VQQKEwNqdGcwHhcNMTUwNTIwMTQ0MjI4WhcNMjUwNTE3MTQ0MjI4WjA/MQswCQYD
+# VQQGEwJVUzEQMA4GA1UECBMHR2VvcmdpYTEQMA4GA1UEBxMHQXRsYW50YTEMMAoG
+# A1UEChMDanRnMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC6pvVrnbkIMd+W
+# C5wLCpRgodlclsM1D4VoE5SLZSnPTEBkHFC4w2bYzID+JiZTgIV6IA3LTVobk2tG
+# FCs/MgaaopJ01Wj46XuNubzLXbV9vZ9ND37E5rP0PMlR+ndbkIavE4WvhfY+J1h+
+# C9h3QG2HDdWBA+IV2SDJqgg+FXJ6aQIDAQABo4GhMIGeMB0GA1UdDgQWBBTSmfIL
+# +VoUvKp45fWv0uuRuyXtdDBvBgNVHSMEaDBmgBTSmfIL+VoUvKp45fWv0uuRuyXt
+# dKFDpEEwPzELMAkGA1UEBhMCVVMxEDAOBgNVBAgTB0dlb3JnaWExEDAOBgNVBAcT
+# B0F0bGFudGExDDAKBgNVBAoTA2p0Z4IJANebwMY/UnDeMAwGA1UdEwQFMAMBAf8w
+# DQYJKoZIhvcNAQEFBQADgYEAWAVHVszajY4k5XS3JkzqGLWZvkNDjEv3LapqoBkZ
+# ee8Vukdmbo2bJ9b2MLE0zr3JIw3zTOrPHLeTcQFKZ25bQlpybZhC/yOnYsvIyN8Y
+# FyNqBH4XJU/Ad6tFYcCfOsTp9Bes7mdHo09HBuzoM/90aDYgOP6ipVzbEup3xptI
+# wAY=
+# -----END CERTIFICATE-----
+# CERT
+# dpkg-reconfigure ca-certificates
+# update-ca-certificates
 
 # Install some dependencies and tools
 apt-get update
