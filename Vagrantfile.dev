@@ -41,6 +41,11 @@ HTTPS_PROXY_ENABLE = "true" # HTTPS proxy server on (true) or off (false)
 HTTPS_PROXY_HOST = "http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
 HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
 
+# SSL Keys
+SSL_KEY = "/usr/share/ca-certificates/charles.key"
+SSL_CRT = "/usr/share/ca-certificates/charles.crt"
+SSL_PEM = "/usr/share/ca-certificates/charles.pem"
+
 # Set DevStack base config
 HOST_IP = "#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
 DEVSTACK_BRANCH = "stable/kilo" # Devstack branch to synch to, defaults to "master"
@@ -147,7 +152,8 @@ Vagrant.configure("2") do |config|
     # Begin in-line script
     config.vm.provision "shell", inline: <<-EOF
 # Experiimenting with local proxy - sInstall root certificate
-cat << CERT > /usr/share/ca-certificates/charles.crt
+echo "Importing SSL Key..."
+cat << KEY > #{SSL_KEY}
 -----BEGIN CERTIFICATE-----
 MIICnjCCAgegAwIBAgIJANebwMY/UnDeMA0GCSqGSIb3DQEBBQUAMD8xCzAJBgNV
 BAYTAlVTMRAwDgYDVQQIEwdHZW9yZ2lhMRAwDgYDVQQHEwdBdGxhbnRhMQwwCgYD
@@ -165,9 +171,40 @@ ee8Vukdmbo2bJ9b2MLE0zr3JIw3zTOrPHLeTcQFKZ25bQlpybZhC/yOnYsvIyN8Y
 FyNqBH4XJU/Ad6tFYcCfOsTp9Bes7mdHo09HBuzoM/90aDYgOP6ipVzbEup3xptI
 wAY=
 -----END CERTIFICATE-----
-CERT
+KEY
+cat #{SSL_KEY}
+
+echo "Importing SSL CRT..."
+cat << CRT > #{SSL_CRT}
+-----BEGIN RSA PRIVATE KEY-----
+MIICXQIBAAKBgQC6pvVrnbkIMd+WC5wLCpRgodlclsM1D4VoE5SLZSnPTEBkHFC4
+w2bYzID+JiZTgIV6IA3LTVobk2tGFCs/MgaaopJ01Wj46XuNubzLXbV9vZ9ND37E
+5rP0PMlR+ndbkIavE4WvhfY+J1h+C9h3QG2HDdWBA+IV2SDJqgg+FXJ6aQIDAQAB
+AoGBAJy0e6ukOaqlpJ+mk5W5hiUy/Ph9Itqzcz+T4My/XEDMNetW0naspvYxi8LU
+aK0GZAnKS4p6IMKyHAgz+rMN3vgXtghP6xkGaFSnDqLA/JzBpia7NLXmirOngH8T
+kOF3T3EKrzWOu3O2VyG2RVCYEvRmXnetrrgn5HZMDOFhmzQZAkEA8jcL59H9eb5q
+FQwxBX816/dHCnwwjDuuYs6IR/2Qf1BUZpGFKo5wsm1KbVhtihTm4XUVyfGVzmI8
+mIZM7GcTLwJBAMVGY5GEEbwElxkOip7JcjaIGFODRIHr+ZMNrNKDq7UOmZty/xsg
+6+ekBk4FxUryGzGHHEA/I/2L5EkEl5DjxecCQFGMiPye7bl8i5jUhviz0MLGeWul
+Tm8YdOkdYjLiwzCqKhBydCRU2sqoE0PnXtH7oZRM6G4aYXagCojLxsBdH88CQDqb
+dM0wXUxsWK9bAJe35TSKLh/xaZLnlhe4AlXwRDzf/4aNHXjjyPHiavUXBcwELUwD
+hcMYfwq+Wq3OrXCgGpUCQQCHF6frmjS2aqC6zRoUnviZA5dHAbc0u/0Ws0c6ewiH
+IrvIVf5kAbkU/oEyeoKWWLfsbEt9CYa2C5im7rIcVNnM
+-----END RSA PRIVATE KEY-----
+CRT
+cat #{SSL_CRT}
+
+echo "Creating SSL PEM..."
+cp #{SSL_CRT} #{SSL_PEM}
+cat #{SSL_KEY} >> #{SSL_PEM}
+chmod +rx #{SSL_KEY} #{SSL_CRT} #{SSL_PEM}
+echo "#{SSL_PEM} output..."
+cat #{SSL_PEM}
 
 # Install certificate
+mkdir /usr/local/share/ca-certificates/charles
+cp /usr/share/ca-certificates/charles.* /usr/local/share/ca-certificates/charles
+apt-get -y install ca-certificates
 update-ca-certificates
 
 # Tell apt to ignore package signing and to use proxy
@@ -182,15 +219,16 @@ echo insecure >> /home/vagrant/.curlrc
 
 # Install some dependencies and tools
 apt-get update
-apt-get -y install git nmap traceroute python-pip
+apt-get -y install git nmap traceroute
 
 # Set git to use https:// instead of git://
+git config --global http.sslCAInfo #{SSL_PEM}
 git config --global url.https://.insteadOf git://
 git config --global http.sslVerify false
-# git config --global http.sslCAInfo /usr/share/ca-certificates/charles.crt
 
-# Set pip to use certificate
-alias pip='pip --cert /etc/ssl/certs/ca-certificates.crt --allow-unverified'
+# Set pip and python to use certificate
+# alias pip='sudo -E pip --cert #{SSL_PEM}'
+python -c "import requests; resp = requests.get('https://github.com', verify=False)"
 
 # Clone the devstack repo, commented out temporarily to speed up dev builds
 git clone https://github.com/openstack-dev/devstack.git "#{STACK_HOME}/devstack"
@@ -200,6 +238,15 @@ git clone https://github.com/openstack-dev/devstack.git "#{STACK_HOME}/devstack"
 
 # Clone the autoscale repo, commented out temporarily to speed up dev builds
 # git clone https://github.com/grimmtheory/autoscale.git "#{STACK_HOME}/autoscale"
+
+# Fix pip for proxy
+# cd /home/vagrant/devstack/files
+# echo -e '#!/usr/bin/env python\nimport requests\nrequests.packages.urllib3.disable_warnings()\n' > ./pip-ssl.txt
+# cat ./get-pip.py >> ./pip-ssl.txt; cp ./pip-ssl.txt ./get-pip.py
+
+######################################################################################
+#    PRE-DEVSTACK PREP WORK INSTALL COMPLETE, BEGINNING DEVSTACK CONFIG AND SETUP    #
+######################################################################################
 
 # Configure devstack
 cd "#{STACK_HOME}/devstack"
