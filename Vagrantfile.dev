@@ -32,12 +32,12 @@ DEFAULT_MASK = "255.255.255.0" # Defualt /24 network mask unless specified other
 DNS = "10.0.2.3" # Default DNS server for your subnets, e.g. local VirtualBox forwarder
 
 # HTTP Proxy config
-HTTP_PROXY_ENABLE = "true" # HTTP proxy server on (true) or off (false)
+HTTP_PROXY_ENABLE = "false" # HTTP proxy server on (true) or off (false)
 HTTP_PROXY_HOST = "http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
 HTTP_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
 
 # HTTPS Proxy config
-HTTPS_PROXY_ENABLE = "true" # HTTPS proxy server on (true) or off (false)
+HTTPS_PROXY_ENABLE = "false" # HTTPS proxy server on (true) or off (false)
 HTTPS_PROXY_HOST = "http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
 HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
 
@@ -150,10 +150,12 @@ Vagrant.configure("2") do |config|
     end
 
     # Begin in-line script
-    config.vm.provision "shell", inline: <<-EOF
+    if "#{HTTPS_PROXY_ENABLE}" == "true"
+      config.vm.provision "shell", inline: <<-HTTPS_CONFIG
+
 # Experiimenting with local proxy - sInstall root certificate
-echo "Importing SSL Key..."
-cat << KEY > #{SSL_KEY}
+echo "Importing SSL Certificate..."
+cat << CRT > #{SSL_CRT}
 -----BEGIN CERTIFICATE-----
 MIICnjCCAgegAwIBAgIJANebwMY/UnDeMA0GCSqGSIb3DQEBBQUAMD8xCzAJBgNV
 BAYTAlVTMRAwDgYDVQQIEwdHZW9yZ2lhMRAwDgYDVQQHEwdBdGxhbnRhMQwwCgYD
@@ -171,11 +173,11 @@ ee8Vukdmbo2bJ9b2MLE0zr3JIw3zTOrPHLeTcQFKZ25bQlpybZhC/yOnYsvIyN8Y
 FyNqBH4XJU/Ad6tFYcCfOsTp9Bes7mdHo09HBuzoM/90aDYgOP6ipVzbEup3xptI
 wAY=
 -----END CERTIFICATE-----
-KEY
-cat #{SSL_KEY}
+CRT
+cat #{SSL_CRT}
 
-echo "Importing SSL CRT..."
-cat << CRT > #{SSL_CRT}
+echo "Importing SSL Key..."
+cat << KEY > #{SSL_KEY}
 -----BEGIN RSA PRIVATE KEY-----
 MIICXQIBAAKBgQC6pvVrnbkIMd+WC5wLCpRgodlclsM1D4VoE5SLZSnPTEBkHFC4
 w2bYzID+JiZTgIV6IA3LTVobk2tGFCs/MgaaopJ01Wj46XuNubzLXbV9vZ9ND37E
@@ -191,19 +193,18 @@ dM0wXUxsWK9bAJe35TSKLh/xaZLnlhe4AlXwRDzf/4aNHXjjyPHiavUXBcwELUwD
 hcMYfwq+Wq3OrXCgGpUCQQCHF6frmjS2aqC6zRoUnviZA5dHAbc0u/0Ws0c6ewiH
 IrvIVf5kAbkU/oEyeoKWWLfsbEt9CYa2C5im7rIcVNnM
 -----END RSA PRIVATE KEY-----
-CRT
-cat #{SSL_CRT}
+KEY
+cat #{SSL_KEY}
 
 echo "Creating SSL PEM..."
-cp #{SSL_CRT} #{SSL_PEM}
-cat #{SSL_KEY} >> #{SSL_PEM}
+cp #{SSL_KEY} #{SSL_PEM}
+cat #{SSL_CRT} >> #{SSL_PEM}
 chmod +rx #{SSL_KEY} #{SSL_CRT} #{SSL_PEM}
 echo "#{SSL_PEM} output..."
 cat #{SSL_PEM}
 
 # Install certificate
-mkdir /usr/local/share/ca-certificates/charles
-cp /usr/share/ca-certificates/charles.* /usr/local/share/ca-certificates/charles
+cp #{SSL_CRT} /usr/local/share/ca-certificates
 apt-get -y install ca-certificates
 update-ca-certificates
 
@@ -223,34 +224,45 @@ apt-get -y install git nmap traceroute
 
 # Set git to use https:// instead of git://
 git config --global http.sslCAInfo #{SSL_PEM}
+git config --global http.proxy #{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/
+git config --global https.pproxy #{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/
 git config --global url.https://.insteadOf git://
 git config --global http.sslVerify false
 
 # Set pip and python to use certificate
-# alias pip='sudo -E pip --cert #{SSL_PEM}'
+alias pip='sudo -E pip --cert #{SSL_PEM}'
 python -c "import requests; resp = requests.get('https://github.com', verify=False)"
+sed -i -e 's/, InsecurePlatformWarning//g' /usr/local/lib/python2.7/dist-packages/pip/_vendor/requests/packages/urllib3/util/ssl_.py
 
-# Clone the devstack repo, commented out temporarily to speed up dev builds
-git clone https://github.com/openstack-dev/devstack.git "#{STACK_HOME}/devstack"
+HTTPS_CONFIG
+
+    end
+      
+config.vm.provision "shell", inline: <<-EOF
+
+# Install some dependencies and tools
+apt-get update
+apt-get -y install git nmap traceroute
+
+# Clone the devstack repo
+git clone https://github.com/openstack-dev/devstack.git #{STACK_HOME}/devstack
 
 # Clone the heat-templates repo
-# git clone https://github.com/openstack/heat-templates.git "#{STACK_HOME}/heat-templates"
+git clone https://github.com/openstack/heat-templates.git #{STACK_HOME}/heat-templates
 
-# Clone the autoscale repo, commented out temporarily to speed up dev builds
-# git clone https://github.com/grimmtheory/autoscale.git "#{STACK_HOME}/autoscale"
+# Clone the autoscale repo
+git clone https://github.com/grimmtheory/autoscale.git #{STACK_HOME}/autoscale
 
-# Fix pip for proxy
-# cd /home/vagrant/devstack/files
-# echo -e '#!/usr/bin/env python\nimport requests\nrequests.packages.urllib3.disable_warnings()\n' > ./pip-ssl.txt
-# cat ./get-pip.py >> ./pip-ssl.txt; cp ./pip-ssl.txt ./get-pip.py
+# Clone the vagrant-devstack repo
+git clone https://github.com/grimmtheory/vagrant-devstack.git #{STACK_HOME}/vagrant-devstack
 
 ######################################################################################
 #    PRE-DEVSTACK PREP WORK INSTALL COMPLETE, BEGINNING DEVSTACK CONFIG AND SETUP    #
 ######################################################################################
 
 # Configure devstack
-cd "#{STACK_HOME}/devstack"
-cat << CONF > "#{STACK_HOME}/devstack/local.conf"
+cd #{STACK_HOME}/devstack
+cat << CONF > #{STACK_HOME}/devstack/local.conf
 [[local|localrc]]
 HOST_IP=#{HOST_IP}
 DEVSTACK_BRANCH=#{DEVSTACK_BRANCH}
@@ -280,9 +292,9 @@ RABBIT_PASSWORD=#{DEVSTACK_PASSWORD}
 SERVICE_PASSWORD=#{DEVSTACK_PASSWORD}
 SERVICE_TOKEN=#{DEVSTACK_PASSWORD}
 
-SCREEN_LOGDIR="#{LOG_DIR}"
-LOGFILE="#{STACK_LOG}"
-INSTANCES_PATH="#{INSTANCES_PATH}"
+SCREEN_LOGDIR=#{LOG_DIR}
+LOGFILE=#{STACK_LOG}
+INSTANCES_PATH=#{INSTANCES_PATH}
 
 # Disable unwanted services
 # Disable nova network
@@ -372,23 +384,27 @@ CONF
 
 # Set passwords
 echo "" ; echo "Setting passwords..."
-echo root:"#{DEVSTACK_PASSWORD}" | chpasswd
-echo vagrant:"#{DEVSTACK_PASSWORD}" | chpasswd
+echo root:#{DEVSTACK_PASSWORD} | chpasswd
+echo vagrant:#{DEVSTACK_PASSWORD} | chpasswd
+grep root /etc/passwd
+grep vagrant /etc/passwd
 
 # fix permissions as the cloned repo is owned by root
-echo "" ; echo "Updating permissions on "#{STACK_HOME}"..."
-chown -R vagrant:vagrant "#{STACK_HOME}"
+echo "" ; echo "Updating permissions on #{STACK_HOME}"
+chown -R vagrant:vagrant #{STACK_HOME}
 
 # Add credentials to Vagrant's bash profile
 echo "" ; echo "Adding openrc credentials to #{STACK_HOME}/.bash_profile"
-echo "source #{STACK_HOME}/devstack/openrc admin demo' >> #{STACK_HOME}/.bash_profile"
+echo "source #{STACK_HOME}/devstack/openrc admin demo >> #{STACK_HOME}/.bash_profile"
+cat #{STACK_HOME}/.bash_profile
 
 # fix routing so that VMs can reach out to the internets
 echo "" ; echo "Fixing routing so that #{PRIVATE_NETWORK}.0/24 can see #{PUBLIC_NETWORK}.0/24"
-cat << SYSCTL > "/etc/sysctl.d/60-devstack.conf"
+cat << SYSCTL > /etc/sysctl.d/60-devstack.conf
 net.ipv4.conf.eth0.proxy_arp = 1
 net.ipv4.ip_forward = 1
 SYSCTL
+cat /etc/sysctl.d/60-devstack.conf
 
 echo "" ; echo "Applying new routing, interface rules, etc."
 sysctl --system
@@ -399,6 +415,9 @@ echo "" ; echo "Bringing up eth2..."
 ip link set dev eth2 up
 echo "" ; echo "Bringing up eth2 results:"
 echo "" ; ifconfig eth2
+
+ifconfig
+count=1; while [ $count -le 60 ]; do echo sleeping $count seconds; sleep 1; let count=count+1; done
 
 # setup devstack
 echo "" ; "Setting up DevStack..."
@@ -414,6 +433,7 @@ cat << ETH2 > /etc/network/interfaces.d/eth2.cfg
 auto eth2
 iface eth2 inet manual
 ETH2
+cat /etc/network/interfaces.d/eth2.cfg
 
 # Setup the br-ex interfaces file
 cat << BREX > /etc/network/interfaces.d/br-ex.cfg
@@ -423,6 +443,7 @@ address #{PUBLIC_NETWORK}.2
 netmask #{DEFAULT_MASK}
 up ip route add #{PRIVATE_NETWORK}.0/24 via #{PUBLIC_NETWORK}.3 dev br-ex
 BREX
+cat /etc/network/interfaces.d/br-ex.cfg
 
 # Begin post tasks
 cd "#{STACK_HOME}"
