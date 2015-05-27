@@ -48,7 +48,7 @@ SSL_PEM="/usr/share/ca-certificates/charles.pem" # SSL pem for HTTPS proxy
 
 # Set DevStack base config
 HOST_IP="#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
-DEVSTACK_BRANCH="master" # Devstack branch to synch to, defaults to "master"
+DEVSTACK_BRANCH="stable\kilo" # Devstack branch to synch to, defaults to "master"
 DEVSTACK_PASSWORD="stack" # Password for all devstack services and logins
 
 # Set OpenStack image / flavor config
@@ -648,8 +648,14 @@ for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ;
 
   while [[ num++ -lt 3 ]]; do
 
-    result=`curl http://$ip`
-    echo "Testing HTTP access to node $ip...returns...$result"
+    ipresult=""
+    ipresult=`curl http://$ip 2>/dev/null`
+
+    sleep 1
+
+    echo "Testing HTTP access to node $ip ...returns... $ipresult"
+
+    sleep 1
 
   done
 
@@ -663,8 +669,14 @@ for vip in #{PRIVATE_NETWORK_VIP} #{PUBLIC_NETWORK_VIP} ; do
 
   while [[ num++ -lt 3 ]]; do
 
-    result=`curl http://$vip`
-    echo "Testing HTTP access to $vip...returns...$result"
+    vipresult=""
+    vipresult=`curl http://$vip 2>/dev/null`
+
+    sleep 1
+
+    echo "Testing HTTP access to $vip ...returns... $vipresult"
+
+    sleep 1
 
   done
 
