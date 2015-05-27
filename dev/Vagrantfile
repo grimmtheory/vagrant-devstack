@@ -642,8 +642,8 @@ sleep30
 echo ""
 echo "Testing the HTTP listener on each node..."
 
-# for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
-for ip in `nova list | grep node | awk '{ print $12 }' | awk -F= '{ print $2 }' | sed -e 's/,//g'`
+# for ip in `nova list | grep node | awk '{ print $12 }' | awk -F= '{ print $2 }' | sed -e 's/,//g'`
+for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
   num=1
   while [[ num++ -lt 3 ]]; do
     ipresult=`curl --connect-timeout 3 -s http://$ip | grep .`
