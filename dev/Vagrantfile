@@ -236,12 +236,10 @@ git config --global http.sslVerify false
 alias pip='sudo -E pip --cert #{SSL_PEM}'
 python -c "import requests; resp=requests.get('https://github.com', verify=False)"
 sed -i -e 's/, InsecurePlatformWarning//g' /usr/local/lib/python2.7/dist-packages/pip/_vendor/requests/packages/urllib3/util/ssl_.py
-
 HTTPS_CONFIG
-
     end
-      
-config.vm.provision "shell", inline: <<-EOF
+
+    config.vm.provision "shell", inline: <<-POST
 
 # Install some dependencies and tools
 apt-get update
@@ -623,6 +621,7 @@ portid=`neutron port-list | grep #{PRIVATE_NETWORK_VIP} | awk '{ print $2 }'`
 neutron floatingip-create --port-id $portid --fixed-ip-address #{PRIVATE_NETWORK_VIP} --floating-ip-address #{PUBLIC_NETWORK_VIP} #{PUBLIC_NETWORK_NAME}
 
 sleep15
+
 neutron floatingip-list
 
 # Turn on an http listener for each host
@@ -635,56 +634,37 @@ for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103; 
   sleep15
 
 done
-
 echo "All listeners created."
+
 sleep30
+
 # Testing VIPs
 echo ""
 echo "Testing the HTTP listener on each node..."
 
-for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
-
+# for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
+for ip in `nova list | grep node | awk '{ print $12 }' | awk -F= '{ print $2 }' | sed -e 's/,//g'`
   num=1
-
   while [[ num++ -lt 3 ]]; do
-
-    ipresult=""
-    ipresult=`curl http://$ip 2>/dev/null`
-
+    ipresult=`curl --connect-timeout 3 -s http://$ip | grep .`
     sleep 1
-
     echo "Testing HTTP access to node $ip ...returns... $ipresult"
-
-    sleep 1
-
+    sleep 3
   done
-
 done
 
 echo ""
 echo "Testing HTTP access to each virtual ip address..."
 for vip in #{PRIVATE_NETWORK_VIP} #{PUBLIC_NETWORK_VIP} ; do
-
   num=1
-
   while [[ num++ -lt 3 ]]; do
-
-    vipresult=""
-    vipresult=`curl http://$vip 2>/dev/null`
-
+    vipresult=`curl --connect-timeout 3 -s http://$vip | grep .`
     sleep 1
-
     echo "Testing HTTP access to $vip ...returns... $vipresult"
-
-    sleep 1
-
+    sleep 3
   done
-
 done
-
-exit 0
-
-EOF
+POST
     end
   end
 end
