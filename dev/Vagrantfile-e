@@ -8,82 +8,82 @@ BUILD_TYPE="COMPLETE" # Set build type to "BASE", "STAGED" or "COMPLETE" based o
 BUILD_VERSION="STABLE" # Set build version to "STABLE" or "DEV" to enable or disable experimental features
 
 # Set installation settings
-STACK_HOME = "/home/vagrant" # DevStack home directory
+STACK_HOME="/home/vagrant" # DevStack home directory
 INSTALL_DIR="/opt/stack" # DevStack installation location
 INSTANCES_PATH="#{INSTALL_DIR}/instances" # Guest instances location
 LOG_DIR="/opt/stack/logs" # DevStack log location
 STACK_LOG="#{LOG_DIR}/stack.sh.log" # Stack.sh log file
 
 # Set OS config
-OS_HOSTNAME = "DEVSTACK-#{BUILD_VERSION}-#{BUILD_TYPE}" # Hostname for the OS, defaults to devstack + build version + build type
-NIC3_PROMISCUOUS = "true" # Leave true for Neutron flat / bridged configurations
+OS_HOSTNAME="DEVSTACK-#{BUILD_VERSION}-#{BUILD_TYPE}" # Hostname for the OS, defaults to devstack + build version + build type
+NIC3_PROMISCUOUS="true" # Leave true for Neutron flat / bridged configurations
 
 # Host OS image config
-VB_IMAGE_SOURCE = "HASHI" # Set to either "HASHI" to use the default Hashicorp syntax, "ubuntu/trusty64", or "URL" to use url syntax, http://cloud-images.ubuntu.com/vagrant/trusty...
-VB_IMAGE_NAME = "ubuntu/trusty64" # The latest VirtualBox image of Trusty server 64 bit from Ubuntu
-VB_IMAGE_URL = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box" # Populate if you are pulling your own image
+VB_IMAGE_SOURCE="HASHI" # Set to either "HASHI" to use the default Hashicorp syntax, "ubuntu/trusty64", or "URL" to use url syntax, http://cloud-images.ubuntu.com/vagrant/trusty...
+VB_IMAGE_NAME="ubuntu/trusty64" # The latest VirtualBox image of Trusty server 64 bit from Ubuntu
+VB_IMAGE_URL="https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box" # Populate if you are pulling your own image
 
 # Set network config
-VAGRANT_NETWORK = "10.0.2" # Vagrant (NAT / default gateway) network
-MANAGEMENT_NETWORK = "192.168.34" # Management network
-PUBLIC_NETWORK = "192.168.28" # Neutron gateway / provider network
-PRIVATE_NETWORK = "10.0.0" # Private network CIDR
-DEFAULT_MASK = "255.255.255.0" # Defualt /24 network mask unless specified otherwise
-DNS = "10.0.2.3" # Default DNS server for your subnets, e.g. local VirtualBox forwarder
+VAGRANT_NETWORK="10.0.2" # Vagrant (NAT / default gateway) network
+MANAGEMENT_NETWORK="192.168.34" # Management network
+PUBLIC_NETWORK="192.168.28" # Neutron gateway / provider network
+PRIVATE_NETWORK="10.0.0" # Private network CIDR
+DEFAULT_MASK="255.255.255.0" # Defualt /24 network mask unless specified otherwise
+DNS="10.0.2.3" # Default DNS server for your subnets, e.g. local VirtualBox forwarder
 
 # HTTP Proxy config
-HTTP_PROXY_ENABLE = "false" # HTTP proxy server on (true) or off (false)
-HTTP_PROXY_HOST = "http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
-HTTP_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
+HTTP_PROXY_ENABLE="false" # HTTP proxy server on (true) or off (false)
+HTTP_PROXY_HOST="http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
+HTTP_PROXY_PORT="8888" # Proxy port if proxy host is enabled
 
 # HTTPS Proxy config
-HTTPS_PROXY_ENABLE = "false" # HTTPS proxy server on (true) or off (false)
-HTTPS_PROXY_HOST = "http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
-HTTPS_PROXY_PORT = "8888" # Proxy port if proxy host is enabled
+HTTPS_PROXY_ENABLE="false" # HTTPS proxy server on (true) or off (false)
+HTTPS_PROXY_HOST="http://#{VAGRANT_NETWORK}.2" # Proxy host if enabled
+HTTPS_PROXY_PORT="8888" # Proxy port if proxy host is enabled
 
 # SSL Keys
-SSL_KEY = "/usr/share/ca-certificates/charles.key"
-SSL_CRT = "/usr/share/ca-certificates/charles.crt"
-SSL_PEM = "/usr/share/ca-certificates/charles.pem"
+SSL_KEY="/usr/share/ca-certificates/charles.key"
+SSL_CRT="/usr/share/ca-certificates/charles.crt"
+SSL_PEM="/usr/share/ca-certificates/charles.pem"
 
 # Set DevStack base config
-HOST_IP = "#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
-DEVSTACK_BRANCH = "stable/kilo" # Devstack branch to synch to, defaults to "master"
-DEVSTACK_PASSWORD = "stack" # Password for all devstack services and logins
+HOST_IP="#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
+DEVSTACK_BRANCH="master" # Devstack branch to synch to, defaults to "master"
+DEVSTACK_PASSWORD="stack" # Password for all devstack services and logins
 
 # Set OpenStack image / flavor config
-DEFAULT_NOVA_IMAGE = "cirros-0.3.4-x86_64-uec" # Used for all instance builds unless specified otherwise
-DEFAULT_NOVA_FLAVOR_NAME = "m1.micro" # Default is 1, m1.tiny, set to custom flavor - 1 vcpu x 64 mb ram x 1 gb disk
-DEFAULT_NOVA_FLAVOR_ID = "6" # Default is 1, m1.tiny, currently set to a custom flavor built during install, 6
+DEFAULT_NOVA_IMAGE="cirros-0.3.4-x86_64-uec" # Used for all instance builds unless specified otherwise
+DEFAULT_NOVA_FLAVOR_NAME="m1.micro" # Default is 1, m1.tiny, set to custom flavor - 1 vcpu x 64 mb ram x 1 gb disk
+DEFAULT_NOVA_FLAVOR_ID="6" # Default is 1, m1.tiny, currently set to a custom flavor built during install, 6
 
 # Set OpenStack neutron config, get OpenStack neutron guids
-FLAT_NEUTRON_INTERFACE = "eth2" # Interface that Neutron bridges to, don't change this unless you understand the impact
-PUBLIC_NEUTRON_INTERFACE = "eth2" # Interface that Neutron routes and nats through, don't change this unless you understand the impact
-PUBLIC_NETWORK_NAME = "public-network" # What to name the public network
-PUBLIC_SUBNET_NAME = "public-subnet" # Give the public subnet a name, defaults to "public-subnet"
-PRIVATE_NETWORK_NAME = "private-network" # What to name the public network
-PRIVATE_SUBNET_NAME = "private-subnet" # Give the public subnet a name, defaults to "public-subnet"
+FLAT_NEUTRON_INTERFACE="eth2" # Interface that Neutron bridges to, don't change this unless you understand the impact
+PUBLIC_NEUTRON_INTERFACE="eth2" # Interface that Neutron routes and nats through, don't change this unless you understand the impact
+PUBLIC_NETWORK_NAME="public-network" # What to name the public network
+PUBLIC_SUBNET_NAME="public-subnet" # Give the public subnet a name, defaults to "public-subnet"
+PRIVATE_NETWORK_NAME="private-network" # What to name the public network
+PRIVATE_SUBNET_NAME="private-subnet" # Give the public subnet a name, defaults to "public-subnet"
 
 # Set OpenStack security config
-SSH_KEY_NAME = "vagrant" # Name of the nova keypair that will be created
-SSH_KEY_PATH = "#{STACK_HOME}/.ssh/id_rsa" # Private key location of the key generated for the nova keypair
-SECURITY_GROUP_NAME = "default" # Name of the security group to add rules to
-SECURITY_GROUP_RULES = "22 80 443" # List of ports to open up in the default security group
+SSH_KEY_NAME="vagrant" # Name of the nova keypair that will be created
+SSH_KEY_PATH="#{STACK_HOME}/.ssh/id_rsa" # Private key location of the key generated for the nova keypair
+SECURITY_GROUP_NAME="default" # Name of the security group to add rules to
+SECURITY_GROUP_RULES="21 22 80 443" # List of ports to open up in the default security group
 
 # Set Openstack load balancer config
-LBPOOL_NAME = "lbpool1" # Name your load balancer pool
-LBPOOL_PORT = "80" # Load balancer port
-LBPOOL_PROTOCOL = "HTTP" # Load balancer port
-PRIVATE_NETWORK_VIP = "#{PRIVATE_NETWORK}.100" # Defaults to .100 on the private network
-PRIVATE_NETWORK_VIP_NAME = "vip-#{PRIVATE_NETWORK_VIP}" # Defaults to "vip-" + "vip ip address"
-PUBLIC_NETWORK_VIP = "#{PUBLIC_NETWORK}.100" # Defaults to .100 on the private network
+LBPOOL_NAME="lbpool1" # Name your load balancer pool
+LBPOOL_PORT="80" # Load balancer port
+LBPOOL_PROTOCOL="HTTP" # Load balancer port
+PRIVATE_NETWORK_VIP="#{PRIVATE_NETWORK}.100" # Defaults to .100 on the private network
+PRIVATE_NETWORK_VIP_NAME="vip-#{PRIVATE_NETWORK_VIP}" # Defaults to "vip-" + "vip ip address"
+PUBLIC_NETWORK_VIP="#{PUBLIC_NETWORK}.100" # Defaults to .100 on the private network
 
 # VirtualBox config
-VB_HOSTNAME = "#{OS_HOSTNAME}" # Hostname label within VirtualBox, defaults to matching the OS_HOSTNAME
-CPU = "1" # Number of virtual CPUs, 1 seems to run faster than 2 as VirtualBox is a hypervisor that runs in userland, i.e. poor virtual SMP
-RAM = "4096" # System memory
-VT_X = "false" # Intel / AMD VT acceleration, inconsistent performance when testing with this build
-APIC_IO = "false" # Network IO acceleration, inconsistent performance when testing with this build
+VB_HOSTNAME="#{OS_HOSTNAME}" # Hostname label within VirtualBox, defaults to matching the OS_HOSTNAME
+CPU="1" # Number of virtual CPUs, 1 seems to run faster than 2 as VirtualBox is a hypervisor that runs in userland, i.e. poor virtual SMP
+RAM="4096" # System memory
+VT_X="false" # Intel / AMD VT acceleration, inconsistent performance when testing with this build
+APIC_IO="false" # Network IO acceleration, inconsistent performance when testing with this build
 
 ##################################################################################
 #    DO NOT MAKE ANY CHANGES BELOW THIS LINE UNLESS YOU UNDERSTAND THE IMPACT    #
@@ -92,31 +92,31 @@ APIC_IO = "false" # Network IO acceleration, inconsistent performance when testi
 Vagrant.configure("2") do |config|
 
   # Select distribution and build for the box
-  if "#{VB_IMAGE_SOURCE}" == "HASHI"
-    config.vm.box = "#{VB_IMAGE_NAME}"
-  elsif	"#{VB_IMAGE_SOURCE}" == "URL"
-    config.vm.url = "#{VB_IMAGE_URL}"
+  if "#{VB_IMAGE_SOURCE}"=="HASHI"
+    config.vm.box="#{VB_IMAGE_NAME}"
+  elsif	"#{VB_IMAGE_SOURCE}"=="URL"
+    config.vm.url="#{VB_IMAGE_URL}"
   end
 
-  if "#{HTTP_PROXY_ENABLE}" == "true"
+  if "#{HTTP_PROXY_ENABLE}"=="true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
-      config.proxy.http     = "#{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/"
-      config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+      config.proxy.http  ="#{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/"
+      config.proxy.no_proxy="localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8"
     end
   end
 
-  if "#{HTTPS_PROXY_ENABLE}" == "true"
+  if "#{HTTPS_PROXY_ENABLE}"=="true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
-      config.proxy.https     = "#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
-      config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+      config.proxy.https  ="#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
+      config.proxy.no_proxy="localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8"
     end
   end
 
   # Speed up https downloads
-  config.vm.box_download_insecure = "true"
+  config.vm.box_download_insecure="true"
 
   # set the hostname, otherwise qrouter will be lost upon reload
-  config.vm.hostname = "#{OS_HOSTNAME}"
+  config.vm.hostname="#{OS_HOSTNAME}"
 
   # eth1, this will be the management endpoint
   config.vm.network :private_network, ip: "#{HOST_IP}", netmask: "#{DEFAULT_MASK}"
@@ -128,29 +128,29 @@ Vagrant.configure("2") do |config|
   config.vm.provider :virtualbox do |vb|
 
     # Lable the virtual machine
-    vb.name = "#{VB_HOSTNAME}"
+    vb.name="#{VB_HOSTNAME}"
 
     # Enable the Virtual Box GUI on boot, i.e. not "headless"
-    vb.gui = true
+    vb.gui=true
 
     # Set CPU and memoru size
     vb.customize ["modifyvm", :id, "--cpus", "#{CPU}"]
     vb.customize ["modifyvm", :id, "--memory", "#{RAM}"]
 
     # Enable promiscuous mode on eth2 for floating IPs to be accessible
-    if "#{NIC3_PROMISCUOUS}" == "true"
+    if "#{NIC3_PROMISCUOUS}"=="true"
       vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
     end
 
-    if "#{BUILD_TYPE}" != "STABLE"
+    if "#{BUILD_TYPE}" !="STABLE"
       # Suppress tty messages
       config.vm.provision "fix-no-tty", type: "shell" do |s|
-        s.privileged = false
-        s.inline = "sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
+        s.privileged=false
+        s.inline="sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
     end
 
     # Begin in-line script
-    if "#{HTTPS_PROXY_ENABLE}" == "true"
+    if "#{HTTPS_PROXY_ENABLE}"=="true"
       config.vm.provision "shell", inline: <<-HTTPS_CONFIG
 
 # Experiimenting with local proxy - sInstall root certificate
@@ -231,7 +231,7 @@ git config --global http.sslVerify false
 
 # Set pip and python to use certificate
 alias pip='sudo -E pip --cert #{SSL_PEM}'
-python -c "import requests; resp = requests.get('https://github.com', verify=False)"
+python -c "import requests; resp=requests.get('https://github.com', verify=False)"
 sed -i -e 's/, InsecurePlatformWarning//g' /usr/local/lib/python2.7/dist-packages/pip/_vendor/requests/packages/urllib3/util/ssl_.py
 
 HTTPS_CONFIG
@@ -396,14 +396,14 @@ chown -R vagrant:vagrant #{STACK_HOME}
 
 # Add credentials to Vagrant's bash profile
 echo "" ; echo "Adding openrc credentials to #{STACK_HOME}/.bash_profile"
-echo "source #{STACK_HOME}/devstack/openrc admin demo >> #{STACK_HOME}/.bash_profile"
+echo "source #{STACK_HOME}/devstack/openrc admin demo" >> #{STACK_HOME}/.bash_profile
 cat #{STACK_HOME}/.bash_profile
 
 # fix routing so that VMs can reach out to the internets
 echo "" ; echo "Fixing routing so that #{PRIVATE_NETWORK}.0/24 can see #{PUBLIC_NETWORK}.0/24"
 cat << SYSCTL > /etc/sysctl.d/60-devstack.conf
-net.ipv4.conf.eth0.proxy_arp = 1
-net.ipv4.ip_forward = 1
+net.ipv4.conf.eth0.proxy_arp=1
+net.ipv4.ip_forward=1
 SYSCTL
 cat /etc/sysctl.d/60-devstack.conf
 
@@ -421,7 +421,7 @@ ifconfig
 count=1; while [ $count -le 60 ]; do echo sleeping $count seconds; sleep 1; let count=count+1; done
 
 # setup devstack
-echo "" ; "Setting up DevStack..."
+echo "" ; echo "Setting up DevStack..."
 cd #{STACK_HOME}/devstack
 sudo -u vagrant env HOME=#{STACK_HOME} ./stack.sh
 
@@ -470,10 +470,14 @@ sourcedemo () { echo "Sourcing user admin and project demo..."; source "#{STACK_
 
 sourceadmin
 # Setup local variables, note, cannot be created until after DevStack is running
-PUBLIC_NETWORK_ID = `neutron net-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public network guid
-PUBLIC_SUBNET_ID = `neutron subnet-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public subnet guid
-PRIVATE_NETWORK_ID = `neutron net-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private network guid
-PRIVATE_SUBNET_ID = `neutron subnet-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private subnet guid
+PUBLIC_NETWORK_ID=`neutron net-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public network guid
+PUBLIC_SUBNET_ID=`neutron subnet-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public subnet guid
+PRIVATE_NETWORK_ID=`neutron net-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private network guid
+PRIVATE_SUBNET_ID=`neutron subnet-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private subnet guid
+echo "PUBLIC NETWORK ID=$PUBLIC_NETWORK_ID"
+echo "PUBLIC SUBNET ID=$PUBLIC_SUBNET_ID"
+echo "PRIVATE NETWORK ID=$PRIVATE_NETWORK_ID"
+echo "PRIVATE SUBNET ID=$PRIVATE_SUBNET_ID"
 
 # generate a keypair and make it available via share
 echo "Generating keypair for key name: #{SSH_KEY_NAME}"

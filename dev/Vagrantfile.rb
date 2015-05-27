@@ -48,7 +48,7 @@ SSL_PEM = "/usr/share/ca-certificates/charles.pem"
 
 # Set DevStack base config
 HOST_IP = "#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
-DEVSTACK_BRANCH = "stable/kilo" # Devstack branch to synch to, defaults to "master"
+DEVSTACK_BRANCH = "master" # Devstack branch to synch to, defaults to "master"
 DEVSTACK_PASSWORD = "stack" # Password for all devstack services and logins
 
 # Set OpenStack image / flavor config
@@ -68,7 +68,7 @@ PRIVATE_SUBNET_NAME = "private-subnet" # Give the public subnet a name, defaults
 SSH_KEY_NAME = "vagrant" # Name of the nova keypair that will be created
 SSH_KEY_PATH = "#{STACK_HOME}/.ssh/id_rsa" # Private key location of the key generated for the nova keypair
 SECURITY_GROUP_NAME = "default" # Name of the security group to add rules to
-SECURITY_GROUP_RULES = "22 80 443" # List of ports to open up in the default security group
+SECURITY_GROUP_RULES = "21 22 80 443" # List of ports to open up in the default security group
 
 # Set Openstack load balancer config
 LBPOOL_NAME = "lbpool1" # Name your load balancer pool
@@ -101,14 +101,14 @@ Vagrant.configure("2") do |config|
   if "#{HTTP_PROXY_ENABLE}" == "true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
       config.proxy.http     = "#{HTTP_PROXY_HOST}:#{HTTP_PROXY_PORT}/"
-      config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+      config.proxy.no_proxy = "localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8"
     end
   end
 
   if "#{HTTPS_PROXY_ENABLE}" == "true"
     if Vagrant.has_plugin?("vagrant-proxyconf")
       config.proxy.https     = "#{HTTPS_PROXY_HOST}:#{HTTPS_PROXY_PORT}/"
-      config.proxy.no_proxy = "localhost,127.0.0.1,.example.com"
+      config.proxy.no_proxy = "localhost,127.0.0.1,192.168.0.0/16,10.0.0.0/8"
     end
   end
 
@@ -396,7 +396,7 @@ chown -R vagrant:vagrant #{STACK_HOME}
 
 # Add credentials to Vagrant's bash profile
 echo "" ; echo "Adding openrc credentials to #{STACK_HOME}/.bash_profile"
-echo "source #{STACK_HOME}/devstack/openrc admin demo >> #{STACK_HOME}/.bash_profile"
+echo "source #{STACK_HOME}/devstack/openrc admin demo" >> #{STACK_HOME}/.bash_profile
 cat #{STACK_HOME}/.bash_profile
 
 # fix routing so that VMs can reach out to the internets
@@ -421,7 +421,7 @@ ifconfig
 count=1; while [ $count -le 60 ]; do echo sleeping $count seconds; sleep 1; let count=count+1; done
 
 # setup devstack
-echo "" ; "Setting up DevStack..."
+echo "" ; echo "Setting up DevStack..."
 cd #{STACK_HOME}/devstack
 sudo -u vagrant env HOME=#{STACK_HOME} ./stack.sh
 
@@ -470,10 +470,14 @@ sourcedemo () { echo "Sourcing user admin and project demo..."; source "#{STACK_
 
 sourceadmin
 # Setup local variables, note, cannot be created until after DevStack is running
-PUBLIC_NETWORK_ID = `neutron net-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public network guid
-PUBLIC_SUBNET_ID = `neutron subnet-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public subnet guid
-PRIVATE_NETWORK_ID = `neutron net-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private network guid
-PRIVATE_SUBNET_ID = `neutron subnet-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private subnet guid
+PUBLIC_NETWORK_ID=`neutron net-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public network guid
+PUBLIC_SUBNET_ID=`neutron subnet-list | grep -v ipv6 | grep public | awk '{ print $2 }'` # Public subnet guid
+PRIVATE_NETWORK_ID=`neutron net-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private network guid
+PRIVATE_SUBNET_ID=`neutron subnet-list | grep -v ipv6 | grep private | awk '{ print $2 }'` # Private subnet guid
+echo "PUBLIC NETWORK ID  = $PUBLIC_NETWORK_ID"
+echo "PUBLIC SUBNET ID   = $PUBLIC_SUBNET_ID"
+echo "PRIVATE NETWORK ID = $PRIVATE_NETWORK_ID"
+echo "PRIVATE SUBNET ID  = $PRIVATE_SUBNET_ID"
 
 # generate a keypair and make it available via share
 echo "Generating keypair for key name: #{SSH_KEY_NAME}"
