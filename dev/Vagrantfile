@@ -48,7 +48,7 @@ SSL_PEM="/usr/share/ca-certificates/charles.pem" # SSL pem for HTTPS proxy
 
 # Set DevStack base config
 HOST_IP="#{MANAGEMENT_NETWORK}.2" # Management IP, ssh to the OS, OpenStack APIs, etc.
-DEVSTACK_BRANCH="stable\kilo" # Devstack branch to synch to, defaults to "master"
+DEVSTACK_BRANCH="master" # Devstack branch to synch to, defaults to "master"
 DEVSTACK_PASSWORD="stack" # Password for all devstack services and logins
 
 # Set OpenStack image / flavor config
