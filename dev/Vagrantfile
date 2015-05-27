@@ -152,11 +152,14 @@ Vagrant.configure("2") do |config|
         s.inline="sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
     end
 
-    # Begin in-line script
-    if "#{HTTPS_PROXY_ENABLE}" == "true"
-      config.vm.provision "shell", inline: <<-HTTPS_CONFIG
+  end
 
-# Experiimenting with local proxy - sInstall root certificate
+    # Begin in-line script
+    config.vm.provision "shell", inline: <<-POST
+
+    if [ "#{HTTPS_PROXY_ENABLE}" == "true" ]; then
+
+# Experiimenting with local proxy - Install root certificate
 echo "Importing SSL Certificate..."
 cat << CRT > #{SSL_CRT}
 -----BEGIN CERTIFICATE-----
@@ -236,10 +239,11 @@ git config --global http.sslVerify false
 alias pip='sudo -E pip --cert #{SSL_PEM}'
 python -c "import requests; resp=requests.get('https://github.com', verify=False)"
 sed -i -e 's/, InsecurePlatformWarning//g' /usr/local/lib/python2.7/dist-packages/pip/_vendor/requests/packages/urllib3/util/ssl_.py
-HTTPS_CONFIG
-    end
 
-    config.vm.provision "shell", inline: <<-POST
+else
+echo "HTTPS proxy disabled..."
+sleep 10
+fi
 
 # Install some dependencies and tools
 apt-get update
@@ -645,10 +649,10 @@ echo "Testing the HTTP listener on each node..."
 # for ip in `nova list | grep node | awk '{ print $12 }' | awk -F= '{ print $2 }' | sed -e 's/,//g'`
 for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
   num=1
-  while [[ num++ -lt 3 ]]; do
+  while [[ num++ -le 3 ]]; do
     ipresult=`curl --connect-timeout 3 -s http://$ip | grep .`
     sleep 1
-    echo "Testing HTTP access to node $ip ...returns... $ipresult"
+    echo "Testing HTTP access to node $ip returns: $ipresult"
     sleep 3
   done
 done
@@ -657,14 +661,13 @@ echo ""
 echo "Testing HTTP access to each virtual ip address..."
 for vip in #{PRIVATE_NETWORK_VIP} #{PUBLIC_NETWORK_VIP} ; do
   num=1
-  while [[ num++ -lt 3 ]]; do
+  while [[ num++ -le 5 ]]; do
     vipresult=`curl --connect-timeout 3 -s http://$vip | grep .`
     sleep 1
-    echo "Testing HTTP access to $vip ...returns... $vipresult"
+    echo "Testing HTTP access to vip $vip  returns: $vipresult"
     sleep 3
   done
 done
-POST
-    end
-  end
+
+    POST
 end
