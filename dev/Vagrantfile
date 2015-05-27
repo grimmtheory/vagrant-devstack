@@ -62,9 +62,9 @@ PUBLIC_NEUTRON_INTERFACE="eth2" # Interface that Neutron routes and nats through
 OVS_EXTERNAL_BRIDGE="br-ex" # Neutron external bridge
 OVS_INTERNAL_BRIDGE="br-int" # Neutron external bridge
 OVS_TUNNEL_BRIDGE="br-tun" # Neutron external bridge
-PUBLIC_NETWORK_NAME="public-network" # What to name the public network
+PUBLIC_NETWORK_NAME="public" # What to name the public network
 PUBLIC_SUBNET_NAME="public-subnet" # Give the public subnet a name, defaults to "public-subnet"
-PRIVATE_NETWORK_NAME="private-network" # What to name the public network
+PRIVATE_NETWORK_NAME="private" # What to name the public network
 PRIVATE_SUBNET_NAME="private-subnet" # Give the public subnet a name, defaults to "public-subnet"
 
 # Set OpenStack security config
@@ -469,6 +469,8 @@ echo ""
 # Source credential functions to allow easy swapping between creds as needed
 sourceadmin () { echo "Sourcing user admin and project admin..."; source "#{STACK_HOME}/devstack/openrc" admin admin; }
 sourcedemo () { echo "Sourcing user admin and project demo..."; source "#{STACK_HOME}/devstack/openrc" admin demo; }
+sleep15 () { echo ""; echo -n "Sleeping 15 seconds: "; count=1; while [ $count -le 15 ]; do echo -n "$count "; sleep 1; let count=count+1; done; echo -e ""; }
+sleep30 () { echo ""; echo -n "Sleeping 30 seconds: "; count=1; while [ $count -le 30 ]; do echo -n "$count "; sleep 1; let count=count+1; done; echo -e ""; }
 
 sourceadmin
 # Setup local variables, note, cannot be created until after DevStack is running
@@ -516,7 +518,7 @@ neutron subnet-update "#{PUBLIC_SUBNET_NAME}" --dns_nameservers list=true "#{DNS
 neutron subnet-update "#{PRIVATE_SUBNET_NAME}" --dns_nameservers list=true "#{DNS}"
 echo "" ; echo "Neutron subnet configuration output:"
 echo "" ; neutron subnet-list ; neutron subnet-show "#{PUBLIC_SUBNET_NAME}" ; neutron subnet-show "#{PUBLIC_SUBNET_NAME}"
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
+sleep15
 
 # Setup web instances
 echo "Setting up web instances..."
@@ -527,7 +529,7 @@ echo "" ; echo "Creating custom flavor '#{DEFAULT_NOVA_FLAVOR_NAME}' for web ins
 echo "" ; nova flavor-create --is-public true "#{DEFAULT_NOVA_FLAVOR_NAME}" 6 64 1 1
 echo "" ; echo "Custom flavor creation output:"
 echo "" ; nova flavor-list ; nova flavor-show "#{DEFAULT_NOVA_FLAVOR_NAME}"
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
+sleep15
 
 # Spawn instances
 echo "" ; echo "Spawning instances..."
@@ -538,8 +540,7 @@ while [ $num -le 3 ] ; do
   echo "Creating instance node$num..."
   echo "RUNNING COMMAND ## nova boot --image #{DEFAULT_NOVA_IMAGE} --flavor #{DEFAULT_NOVA_FLAVOR_ID} --nic net-id=$PRIVATE_NETWORK_ID,v4-fixed-ip=#{PRIVATE_NETWORK}.10$num --key-name #{SSH_KEY_NAME} node$num"
   nova boot --image #{DEFAULT_NOVA_IMAGE} --flavor #{DEFAULT_NOVA_FLAVOR_ID} --nic net-id=$PRIVATE_NETWORK_ID,v4-fixed-ip=#{PRIVATE_NETWORK}.10$num --key-name #{SSH_KEY_NAME} node$num
-  echo "" ; echo "Sleeping 30 seconds..." ; sleep 30
-
+  sleep15
   echo "" ; echo "instance node$num created:"
   echo "" ; nova show node$num
 
@@ -556,7 +557,8 @@ sourcedemo
 echo "RUNNING COMMAND ## neutron lb-pool-create --lb-method ROUND_ROBIN --name #{LBPOOL_NAME} --protocol #{LBPOOL_PROTOCOL} --subnet-id $PRIVATE_SUBNET_ID"
 neutron lb-pool-create --lb-method ROUND_ROBIN --name #{LBPOOL_NAME} --protocol #{LBPOOL_PROTOCOL} --subnet-id $PRIVATE_SUBNET_ID
 echo "" ; echo "Load balancer pool creation complete:"
-echo "" ; echo "Sleeping 30 seconds..." ; sleep 30
+sleep15
+
 neutron lb-pool-list
 
 # Add load balancer members
@@ -571,7 +573,7 @@ while [ $num -le 3 ]; do
   neutron lb-member-create --address #{PRIVATE_NETWORK}.10$num --protocol-port #{LBPOOL_PORT} #{LBPOOL_NAME}
 
   echo "" ; echo "Load balancer pool member $num added."
-  echo "" ; echo "Sleeping 10 seconds..." ; sleep 10
+  sleep15
   neutron lb-member-list
 
   num=$(( $num + 1 ))
@@ -580,7 +582,7 @@ done
 
 echo "" ; echo "All load balancer members added to #{LBPOOL_NAME}."
 neutron lb-member-list
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
+sleep15
 
 # Setup load balancer health monitor
 sourcedemo
@@ -598,7 +600,7 @@ echo "RUNNING COMMAND ## neutron lb-healthmonitor-associate $healthmonitorid" "#
 neutron lb-healthmonitor-associate $healthmonitorid" "#{LBPOOL_NAME}"
 
 echo "" ; echo "Health monitor added to "#{LBPOOL_NAME}"."
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
+sleep15
 neutron lb-healthmonitor-list
 
 # Create load balancer vip
@@ -610,7 +612,7 @@ neutron lb-vip-create --name #{PRIVATE_NETWORK_VIP_NAME} --protocol-port #{LBPOO
 
 echo "" ; echo "Load balancer vip creation complete:"
 echo "" ; neutron lb-vip-list
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
+sleep15
 
 # Add load balancer floating ip
 echo "Adding floating ip to load balancer..."
@@ -620,50 +622,48 @@ echo "RUNNING COMMAND ## neutron floatingip-create --port-id $portid --fixed-ip-
 portid=`neutron port-list | grep #{PRIVATE_NETWORK_VIP} | awk '{ print $2 }'`
 neutron floatingip-create --port-id $portid --fixed-ip-address #{PRIVATE_NETWORK_VIP} --floating-ip-address #{PUBLIC_NETWORK_VIP} #{PUBLIC_NETWORK_NAME}
 
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
+sleep15
 neutron floatingip-list
 
 # Turn on an http listener for each host
 echo "Creating an HTTP listener on each node..."
 
-for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 "#{PRIVATE_NETWORK}.103; do
+for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103; do
 
   echo "Creating listener on $ip ..."
   ssh -i #{SSH_KEY_PATH} -o BatchMode=yes -o StrictHostKeyChecking=no cirros@$ip "while true; do echo -e 'HTTP/1.0 200 OK\r\n\r\nYou are connected to $ip' | sudo nc -l -p 80 ; done &"
-  echo "" ; echo "Sleeping 30 seconds..." ; sleep 30
+  sleep15
 
 done
 
 echo "All listeners created."
-echo "" ; echo "Sleeping 5 seconds..." ; sleep 5
-
+sleep30
 # Testing VIPs
+echo ""
 echo "Testing the HTTP listener on each node..."
 
 for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
 
-    echo ""
-    echo "Testing port 80 directly to IP $ip..."
-    num=1
-
-    while [[ num++ -lt 3 ]]; do
-
-      result=`curl http://$ip 2> /dev/null`
-      echo "Testing HTTP access to $ip...returns...$result"
-
-    done
-
-done
-
-for vip in #{PRIVATE_NETWORK_VIP} #{PUBLIC_NETWORK_VIP} ; do
-
-  echo ""
-  echo "Testing $vip..."
   num=1
 
   while [[ num++ -lt 3 ]]; do
 
-    result=`curl --connect-timeout 1 http://$vip 2> /dev/null`
+    result=`curl http://$ip`
+    echo "Testing HTTP access to node $ip...returns...$result"
+
+  done
+
+done
+
+echo ""
+echo "Testing HTTP access to each virtual ip address..."
+for vip in #{PRIVATE_NETWORK_VIP} #{PUBLIC_NETWORK_VIP} ; do
+
+  num=1
+
+  while [[ num++ -lt 3 ]]; do
+
+    result=`curl http://$vip`
     echo "Testing HTTP access to $vip...returns...$result"
 
   done
@@ -672,7 +672,7 @@ done
 
 exit 0
 
-        EOF
-     end
+EOF
+    end
   end
 end
