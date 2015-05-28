@@ -145,19 +145,20 @@ Vagrant.configure("2") do |config|
       vb.customize ["modifyvm", :id, "--nicpromisc3", "allow-all"]
     end
 
-    if "#{BUILD_TYPE}" != "STABLE"
-      # Suppress tty messages
-      config.vm.provision "fix-no-tty", type: "shell" do |s|
-        s.privileged="false"
-        s.inline="sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
-    end
+    # Suppress tty messages
+    # config.vm.provision "fix-no-tty", type: "shell" do |s|
+    #   s.privileged="false"
+    #   s.inline="sudo sed -i '/tty/!s/mesg n/tty -s \\&\\& mesg n/' /root/.profile"
+    # end
 
   end
 
-    # Begin in-line script
-    config.vm.provision "shell", inline: <<-POST
+  # Begin in-line script
+  config.vm.provision "shell", inline: $POST
+  end
 
-    if [ "#{HTTPS_PROXY_ENABLE}" == "true" ]; then
+$POST = <<POST
+if [ "#{HTTPS_PROXY_ENABLE}" == "true" ]; then
 
 # Experiimenting with local proxy - Install root certificate
 echo "Importing SSL Certificate..."
@@ -642,32 +643,32 @@ echo "All listeners created."
 
 sleep30
 
-# Testing VIPs
+# Testing HTTP listeners on each node
 echo ""
-echo "Testing the HTTP listener on each node..."
-
-# for ip in `nova list | grep node | awk '{ print $12 }' | awk -F= '{ print $2 }' | sed -e 's/,//g'`
+echo "## TESTING HTTP ACCESS TO LISTENERS ON EACH NODE ##"
 for ip in #{PRIVATE_NETWORK}.101 #{PRIVATE_NETWORK}.102 #{PRIVATE_NETWORK}.103 ; do
   num=1
   while [[ num++ -le 3 ]]; do
     ipresult=`curl --connect-timeout 3 -s http://$ip | grep .`
     sleep 1
-    echo "Testing HTTP access to node $ip returns: $ipresult"
-    sleep 3
+    echo -e "Testing HTTP access, curl http://$ip returns ===>\t\"$ipresult\""
+    sleep 1
   done
+  echo ""
 done
 
+# Testing load-balancers VIPs
 echo ""
-echo "Testing HTTP access to each virtual ip address..."
+echo "## TESTING HTTP ACCESS TO VIRTUAL IP ADDRESSES ##"
 for vip in #{PRIVATE_NETWORK_VIP} #{PUBLIC_NETWORK_VIP} ; do
   num=1
-  while [[ num++ -le 5 ]]; do
+  while [[ num++ -le 3 ]]; do
     vipresult=`curl --connect-timeout 3 -s http://$vip | grep .`
     sleep 1
-    echo "Testing HTTP access to vip $vip  returns: $vipresult"
-    sleep 3
+    echo -e "Testing HTTP access, curl http://$vip returns ===>\t\"$vipresult\""
+    sleep 1
   done
+  echo ""
 done
 
-    POST
-end
+POST
